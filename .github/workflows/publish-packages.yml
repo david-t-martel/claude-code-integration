@@ -1,0 +1,499 @@
+name: Publish Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag to publish (e.g., v2.0.0)'
+        required: true
+        type: string
+      publish_to_npm:
+        description: 'Publish to NPM Registry'
+        required: false
+        default: false
+        type: boolean
+      publish_to_github:
+        description: 'Publish to GitHub Packages'
+        required: false
+        default: true
+        type: boolean
+      dry_run:
+        description: 'Dry run (test without publishing)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8.15.0'
+  REGISTRY_URL: 'https://npm.pkg.github.com'
+
+jobs:
+  # Job 1: Validate Release
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      should_publish: ${{ steps.version.outputs.should_publish }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version information
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+            IS_PRERELEASE="${{ github.event.release.prerelease }}"
+          else
+            TAG_NAME="${{ github.event.inputs.version_tag }}"
+            IS_PRERELEASE=$(echo "$TAG_NAME" | grep -E "(alpha|beta|rc)" > /dev/null && echo "true" || echo "false")
+          fi
+          
+          VERSION=${TAG_NAME#v}
+          
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          
+          # Check if we should publish
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "🔍 Dry run mode - no actual publishing will occur"
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "📦 Release Information:"
+          echo "  Tag: $TAG_NAME"
+          echo "  Version: $VERSION"
+          echo "  Prerelease: $IS_PRERELEASE"
+          echo "  Should Publish: ${{ github.event.inputs.dry_run != 'true' }}"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.\-]+)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Check if tag exists
+        run: |
+          TAG_NAME="${{ steps.version.outputs.tag_name }}"
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "✅ Tag $TAG_NAME exists"
+          else
+            echo "❌ Tag $TAG_NAME does not exist"
+            exit 1
+          fi
+
+  # Job 2: Build Packages
+  build-packages:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [validate-release]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.REGISTRY_URL }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Verify build outputs
+        run: |
+          echo "📦 Checking build outputs..."
+          find packages -name "dist" -type d | while read dir; do
+            echo "  Found dist directory: $dir"
+            ls -la "$dir" | head -10
+          done
+          
+          find packages -name "lib" -type d | while read dir; do
+            echo "  Found lib directory: $dir"
+            ls -la "$dir" | head -10
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-packages
+          path: |
+            packages/*/dist
+            packages/*/lib
+            packages/*/package.json
+            package.json
+            pnpm-lock.yaml
+          retention-days: 7
+
+  # Job 3: Publish to GitHub Packages
+  publish-github:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate-release, build-packages]
+    if: |
+      (github.event.inputs.publish_to_github == 'true' || github.event_name == 'release') &&
+      needs.validate-release.outputs.should_publish == 'true'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: ${{ env.REGISTRY_URL }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-packages
+          path: .
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure package.json for GitHub Packages
+        run: |
+          # Update package.json files to use GitHub Packages registry
+          find packages -name "package.json" | while read pkg_json; do
+            echo "Updating $pkg_json for GitHub Packages..."
+            
+            # Add publishConfig for GitHub Packages
+            jq '. + {
+              "publishConfig": {
+                "registry": "https://npm.pkg.github.com/@david-t-martel"
+              }
+            }' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+            
+            # Ensure package name is scoped
+            PACKAGE_NAME=$(jq -r '.name' "$pkg_json")
+            if [[ ! "$PACKAGE_NAME" =~ ^@david-t-martel/ ]]; then
+              NEW_NAME="@david-t-martel/${PACKAGE_NAME#@claude-code/}"
+              jq --arg name "$NEW_NAME" '.name = $name' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+              echo "Updated package name from $PACKAGE_NAME to $NEW_NAME"
+            fi
+          done
+
+      - name: Set package versions
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          echo "Setting all package versions to $VERSION"
+          
+          # Update root package.json
+          jq --arg version "$VERSION" '.version = $version' package.json > package.json.tmp && mv package.json.tmp package.json
+          
+          # Update all package.json files in packages/
+          find packages -name "package.json" | while read pkg_json; do
+            jq --arg version "$VERSION" '.version = $version' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+            echo "Updated version in $pkg_json to $VERSION"
+          done
+
+      - name: Publish packages to GitHub Packages
+        run: |
+          echo "🚀 Publishing packages to GitHub Packages..."
+          
+          # Publish each package
+          find packages -name "package.json" | while read pkg_json; do
+            pkg_dir=$(dirname "$pkg_json")
+            pkg_name=$(jq -r '.name' "$pkg_json")
+            
+            echo "Publishing $pkg_name from $pkg_dir..."
+            
+            cd "$pkg_dir"
+            
+            # Check if package already exists at this version
+            if pnpm view "$pkg_name@${{ needs.validate-release.outputs.version }}" version 2>/dev/null; then
+              echo "⚠️  Package $pkg_name@${{ needs.validate-release.outputs.version }} already exists, skipping..."
+            else
+              if [ "${{ needs.validate-release.outputs.is_prerelease }}" == "true" ]; then
+                pnpm publish --access public --tag next --no-git-checks
+                echo "✅ Published $pkg_name as prerelease (next tag)"
+              else
+                pnpm publish --access public --no-git-checks
+                echo "✅ Published $pkg_name as stable release"
+              fi
+            fi
+            
+            cd - > /dev/null
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 4: Publish to NPM (Optional)
+  publish-npm:
+    name: Publish to NPM Registry
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate-release, build-packages]
+    if: |
+      github.event.inputs.publish_to_npm == 'true' &&
+      needs.validate-release.outputs.should_publish == 'true' &&
+      needs.validate-release.outputs.is_prerelease == 'false'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: built-packages
+          path: .
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure packages for NPM
+        run: |
+          # Update package.json files for NPM registry
+          find packages -name "package.json" | while read pkg_json; do
+            echo "Configuring $pkg_json for NPM..."
+            
+            # Remove GitHub Packages publishConfig if it exists
+            jq 'del(.publishConfig)' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+            
+            # Ensure proper scoping for NPM
+            PACKAGE_NAME=$(jq -r '.name' "$pkg_json")
+            if [[ ! "$PACKAGE_NAME" =~ ^@claude-code/ ]]; then
+              NEW_NAME="@claude-code/${PACKAGE_NAME##*/}"
+              jq --arg name "$NEW_NAME" '.name = $name' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+              echo "Updated package name from $PACKAGE_NAME to $NEW_NAME for NPM"
+            fi
+          done
+
+      - name: Set package versions
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          echo "Setting all package versions to $VERSION"
+          
+          find packages -name "package.json" | while read pkg_json; do
+            jq --arg version "$VERSION" '.version = $version' "$pkg_json" > "${pkg_json}.tmp" && mv "${pkg_json}.tmp" "$pkg_json"
+          done
+
+      - name: Publish to NPM (Dry Run)
+        run: |
+          echo "🧪 Running NPM publish dry run..."
+          find packages -name "package.json" | while read pkg_json; do
+            pkg_dir=$(dirname "$pkg_json")
+            pkg_name=$(jq -r '.name' "$pkg_json")
+            
+            echo "Dry run for $pkg_name..."
+            cd "$pkg_dir"
+            pnpm publish --dry-run --access public --no-git-checks
+            cd - > /dev/null
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Uncomment the following step to enable actual NPM publishing
+      # - name: Publish to NPM
+      #   run: |
+      #     echo "🚀 Publishing packages to NPM..."
+      #     find packages -name "package.json" | while read pkg_json; do
+      #       pkg_dir=$(dirname "$pkg_json")
+      #       pkg_name=$(jq -r '.name' "$pkg_json")
+      #       
+      #       echo "Publishing $pkg_name to NPM..."
+      #       cd "$pkg_dir"
+      #       pnpm publish --access public --no-git-checks
+      #       echo "✅ Published $pkg_name to NPM"
+      #       cd - > /dev/null
+      #     done
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Job 5: Create Package Manifest
+  create-manifest:
+    name: Create Package Manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate-release, publish-github]
+    if: always() && needs.validate-release.outputs.should_publish == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate-release.outputs.tag_name }}
+
+      - name: Create package manifest
+        run: |
+          echo "# Package Manifest" > package-manifest.md
+          echo "" >> package-manifest.md
+          echo "**Version:** ${{ needs.validate-release.outputs.version }}" >> package-manifest.md
+          echo "**Tag:** ${{ needs.validate-release.outputs.tag_name }}" >> package-manifest.md
+          echo "**Build Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> package-manifest.md
+          echo "**Prerelease:** ${{ needs.validate-release.outputs.is_prerelease }}" >> package-manifest.md
+          echo "" >> package-manifest.md
+          
+          echo "## Published Packages" >> package-manifest.md
+          echo "" >> package-manifest.md
+          
+          find packages -name "package.json" | while read pkg_json; do
+            pkg_name=$(jq -r '.name' "$pkg_json")
+            pkg_version=$(jq -r '.version' "$pkg_json")
+            pkg_desc=$(jq -r '.description // "No description"' "$pkg_json")
+            
+            echo "### $pkg_name" >> package-manifest.md
+            echo "- **Version:** $pkg_version" >> package-manifest.md
+            echo "- **Description:** $pkg_desc" >> package-manifest.md
+            echo "- **Registry:** GitHub Packages" >> package-manifest.md
+            echo "" >> package-manifest.md
+          done
+          
+          echo "## Installation" >> package-manifest.md
+          echo "" >> package-manifest.md
+          echo "### GitHub Packages" >> package-manifest.md
+          echo '```bash' >> package-manifest.md
+          echo "# Configure GitHub Packages registry" >> package-manifest.md
+          echo 'echo "@david-t-martel:registry=https://npm.pkg.github.com" >> ~/.npmrc' >> package-manifest.md
+          echo "" >> package-manifest.md
+          echo "# Install packages" >> package-manifest.md
+          find packages -name "package.json" | head -3 | while read pkg_json; do
+            pkg_name=$(jq -r '.name' "$pkg_json")
+            echo "npm install $pkg_name@${{ needs.validate-release.outputs.version }}" >> package-manifest.md
+          done
+          echo '```' >> package-manifest.md
+
+      - name: Upload package manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-manifest
+          path: package-manifest.md
+          retention-days: 90
+
+  # Job 6: Update Release with Package Info
+  update-release:
+    name: Update Release Information
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate-release, publish-github, create-manifest]
+    if: |
+      always() && 
+      needs.validate-release.outputs.should_publish == 'true' &&
+      github.event_name == 'release'
+
+    steps:
+      - name: Download package manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: package-manifest
+          path: .
+
+      - name: Update release description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const manifest = fs.readFileSync('package-manifest.md', 'utf8');
+              const currentBody = context.payload.release.body || '';
+              
+              const updatedBody = currentBody + '\n\n---\n\n' + manifest;
+              
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: context.payload.release.id,
+                body: updatedBody
+              });
+              
+              console.log('✅ Release description updated with package manifest');
+            } catch (error) {
+              console.error('Error updating release:', error);
+            }
+
+  # Job 7: Notify Success
+  notify:
+    name: Publish Notification
+    runs-on: ubuntu-latest
+    needs: [validate-release, publish-github]
+    if: always() && needs.publish-github.result == 'success'
+
+    steps:
+      - name: Create success notification
+        run: |
+          echo "🎉 Package publishing completed successfully!"
+          echo "📦 Version: ${{ needs.validate-release.outputs.version }}"
+          echo "🏷️  Tag: ${{ needs.validate-release.outputs.tag_name }}"
+          echo "📋 Prerelease: ${{ needs.validate-release.outputs.is_prerelease }}"
+          echo ""
+          echo "Packages are now available on GitHub Packages!"
+          echo "https://github.com/david-t-martel/claude-code-integration/packages"

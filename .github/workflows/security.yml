@@ -1,0 +1,502 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8.15.0'
+
+jobs:
+  # Job 1: CodeQL Analysis
+  codeql:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended,security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for analysis
+        run: pnpm build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # Job 2: Snyk Security Scan
+  snyk:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+
+      - name: Run Snyk to check for container vulnerabilities
+        if: contains(github.event.head_commit.message, '[docker]') || github.event_name == 'schedule'
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: node:18-alpine
+          args: --severity-threshold=high
+
+  # Job 3: NPM Audit
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit
+        run: |
+          echo "Running npm audit..."
+          pnpm audit --audit-level moderate || true
+          
+          # Generate audit report
+          pnpm audit --json > npm-audit.json 2>/dev/null || echo '{}' > npm-audit.json
+          
+          # Check for high/critical vulnerabilities
+          HIGH_VULNS=$(cat npm-audit.json | jq -r '.metadata.vulnerabilities.high // 0')
+          CRITICAL_VULNS=$(cat npm-audit.json | jq -r '.metadata.vulnerabilities.critical // 0')
+          
+          echo "High vulnerabilities: $HIGH_VULNS"
+          echo "Critical vulnerabilities: $CRITICAL_VULNS"
+          
+          if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+            echo "❌ High or critical vulnerabilities found!"
+            echo "::error::Found $HIGH_VULNS high and $CRITICAL_VULNS critical vulnerabilities"
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-results
+          path: npm-audit.json
+          retention-days: 30
+
+  # Job 4: Trivy Filesystem Scan
+  trivy-fs:
+    name: Trivy Filesystem Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+      - name: Run Trivy in table format for PR comments
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-results.txt'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Comment PR with Trivy results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const trivyResults = fs.readFileSync('trivy-results.txt', 'utf8');
+              
+              if (trivyResults.includes('HIGH') || trivyResults.includes('CRITICAL')) {
+                const body = `## 🔒 Security Scan Results
+                
+                Trivy found potential security issues:
+                
+                \`\`\`
+                ${trivyResults}
+                \`\`\`
+                
+                Please review and address these security findings before merging.`;
+                
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: body
+                });
+              } else {
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: '✅ **Security Scan**: No high or critical vulnerabilities found by Trivy.'
+                });
+              }
+            } catch (error) {
+              console.log('No Trivy results file found or error reading it');
+            }
+
+  # Job 5: License Compliance Check
+  license-check:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Check licenses
+        run: |
+          echo "Checking dependency licenses..."
+          license-checker --json --out licenses.json
+          
+          # Check for problematic licenses
+          PROBLEMATIC_LICENSES="GPL-3.0,AGPL-3.0,LGPL-3.0,LGPL-2.1,GPL-2.0"
+          
+          if license-checker --excludePackages "$(echo $PROBLEMATIC_LICENSES | tr ',' ';')" --failOn "$PROBLEMATIC_LICENSES"; then
+            echo "✅ All licenses are compliant"
+          else
+            echo "❌ Found incompatible licenses"
+            echo "::error::Incompatible licenses detected"
+            exit 1
+          fi
+
+      - name: Generate license report
+        run: |
+          echo "# License Report" > LICENSE_REPORT.md
+          echo "" >> LICENSE_REPORT.md
+          echo "Generated on: $(date)" >> LICENSE_REPORT.md
+          echo "" >> LICENSE_REPORT.md
+          echo "## Dependencies and their licenses:" >> LICENSE_REPORT.md
+          echo "" >> LICENSE_REPORT.md
+          
+          license-checker --markdown >> LICENSE_REPORT.md
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: |
+            LICENSE_REPORT.md
+            licenses.json
+          retention-days: 90
+
+  # Job 6: Secrets Scanning with GitLeaks
+  gitleaks:
+    name: GitLeaks Secret Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # Job 7: Supply Chain Security with SLSA
+  slsa-check:
+    name: SLSA Supply Chain Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate SBOM (Software Bill of Materials)
+        run: |
+          # Install syft for SBOM generation
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Generate SBOM
+          syft packages dir:. -o spdx-json --file sbom.spdx.json
+          
+          echo "✅ SBOM generated successfully"
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 90
+
+  # Job 8: Docker Security Scan (if Dockerfile exists)
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: contains(github.event.head_commit.message, '[docker]') || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Dockerfile
+        id: dockerfile
+        run: |
+          if [ -f "Dockerfile" ] || [ -f "packages/*/Dockerfile" ]; then
+            echo "dockerfile_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "dockerfile_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Docker image for scanning
+        if: steps.dockerfile.outputs.dockerfile_exists == 'true'
+        run: |
+          if [ -f "Dockerfile" ]; then
+            docker build -t claude-code-integration:scan .
+          else
+            echo "No Dockerfile found for scanning"
+          fi
+
+      - name: Run Trivy on Docker image
+        if: steps.dockerfile.outputs.dockerfile_exists == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'claude-code-integration:scan'
+          format: 'sarif'
+          output: 'trivy-docker-results.sarif'
+
+      - name: Upload Docker scan results
+        if: steps.dockerfile.outputs.dockerfile_exists == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-docker-results.sarif'
+
+  # Job 9: Security Report Summary
+  security-summary:
+    name: Security Summary Report
+    runs-on: ubuntu-latest
+    needs: [codeql, npm-audit, trivy-fs, license-check, gitleaks]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" > security-summary.md
+          echo "" >> security-summary.md
+          echo "**Scan Date:** $(date)" >> security-summary.md
+          echo "**Repository:** ${{ github.repository }}" >> security-summary.md
+          echo "**Commit:** ${{ github.sha }}" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          echo "## Scan Results:" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # CodeQL Results
+          if [ "${{ needs.codeql.result }}" == "success" ]; then
+            echo "✅ **CodeQL Analysis**: Passed" >> security-summary.md
+          else
+            echo "❌ **CodeQL Analysis**: Failed" >> security-summary.md
+          fi
+          
+          # NPM Audit Results
+          if [ "${{ needs.npm-audit.result }}" == "success" ]; then
+            echo "✅ **NPM Security Audit**: No high/critical vulnerabilities" >> security-summary.md
+          else
+            echo "❌ **NPM Security Audit**: Vulnerabilities found" >> security-summary.md
+          fi
+          
+          # Trivy Results
+          if [ "${{ needs.trivy-fs.result }}" == "success" ]; then
+            echo "✅ **Trivy Filesystem Scan**: Passed" >> security-summary.md
+          else
+            echo "❌ **Trivy Filesystem Scan**: Issues found" >> security-summary.md
+          fi
+          
+          # License Check Results
+          if [ "${{ needs.license-check.result }}" == "success" ]; then
+            echo "✅ **License Compliance**: All licenses compliant" >> security-summary.md
+          else
+            echo "❌ **License Compliance**: Non-compliant licenses found" >> security-summary.md
+          fi
+          
+          # GitLeaks Results
+          if [ "${{ needs.gitleaks.result }}" == "success" ]; then
+            echo "✅ **Secret Scanning**: No secrets detected" >> security-summary.md
+          else
+            echo "❌ **Secret Scanning**: Secrets found" >> security-summary.md
+          fi
+          
+          echo "" >> security-summary.md
+          echo "## Recommendations:" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "- Review all failed security checks" >> security-summary.md
+          echo "- Update dependencies regularly" >> security-summary.md
+          echo "- Follow secure coding practices" >> security-summary.md
+          echo "- Monitor security advisories" >> security-summary.md
+
+      - name: Upload security summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: security-summary.md
+          retention-days: 90
+
+      - name: Comment on PR with security summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const summary = fs.readFileSync('security-summary.md', 'utf8');
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🔒 Security Scan Summary
+                
+                ${summary}
+                
+                ---
+                *This summary was automatically generated by the security scanning workflow.*`
+              });
+            } catch (error) {
+              console.log('Error reading security summary:', error);
+            }

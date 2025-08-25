@@ -1,0 +1,229 @@
+# Dependabot configuration for automated dependency updates
+version: 2
+
+updates:
+  # Enable version updates for npm (Node.js dependencies)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    reviewers:
+      - "david-t-martel"
+    assignees:
+      - "david-t-martel"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    milestone: 1
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prettier"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group ESLint related updates
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint-*"
+        exclude-patterns:
+          - "eslint-config-prettier"
+      
+      # Group testing dependencies
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "jest"
+          - "@jest/*"
+          - "playwright"
+          - "@playwright/*"
+          - "cypress"
+          - "@cypress/*"
+      
+      # Group TypeScript related dependencies
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "ts-node"
+          - "tsx"
+      
+      # Group development tools
+      dev-tools:
+        patterns:
+          - "turbo"
+          - "rimraf"
+          - "@changesets/*"
+          - "prettier"
+          - "husky"
+          - "lint-staged"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "04:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    reviewers:
+      - "david-t-martel"
+    assignees:
+      - "david-t-martel"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # Enable version updates for Rust dependencies (if Cargo.toml exists)
+  - package-ecosystem: "cargo"
+    directory: "/packages/command-replacer"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "04:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    reviewers:
+      - "david-t-martel"
+    assignees:
+      - "david-t-martel"
+    labels:
+      - "dependencies"
+      - "rust"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Be more conservative with Rust updates
+      - dependency-name: "serde"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tokio"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for Docker (if Dockerfile exists)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "04:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    reviewers:
+      - "david-t-martel"
+    assignees:
+      - "david-t-martel"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 3
+
+  # Monitor package ecosystems in subdirectories
+  - package-ecosystem: "npm"
+    directory: "/packages/core"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "core-package"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/packages/hooks"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:30"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "hooks-package"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/packages/windows-tools"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "windows-tools"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/packages/mcp-servers"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "America/New_York"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "mcp-servers"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    versioning-strategy: "increase"
+    open-pull-requests-limit: 5
