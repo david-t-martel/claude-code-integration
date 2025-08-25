@@ -1,0 +1,55 @@
+{
+  "name": "claude-windows-tools",
+  "version": "1.0.0",
+  "description": "Windows-native tools for Claude Code development environment",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "scripts": {
+    "build": "tsc && npm run build:executables",
+    "build:executables": "npm run build:swc && npm run build:esbuild",
+    "build:swc": "swc src --out-dir dist --config-file .swcrc",
+    "build:esbuild": "npm run build:main && npm run build:cli",
+    "build:main": "esbuild src/main.ts --bundle --platform=node --outfile=dist/main.js --format=cjs",
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --format=cjs",
+    "build:native": "npm run build:native-main && npm run build:native-cli",
+    "build:native-main": "bun build src/main.ts --compile --outfile=dist/windows-tools.exe --target=bun-windows-x64",
+    "build:native-cli": "bun build src/cli.ts --compile --outfile=dist/claude-tools.exe --target=bun-windows-x64",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "clean": "rimraf dist"
+  },
+  "main": "./dist/main.js",
+  "bin": {
+    "claude-tools": "./dist/cli.js"
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*",
+    "README.md",
+    "package.json"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@swc/cli": "^0.1.65",
+    "@swc/core": "^1.13.0",
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.21.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "keywords": [
+    "claude-code",
+    "windows",
+    "development-tools",
+    "typescript",
+    "native"
+  ],
+  "author": "Claude + David",
+  "license": "MIT"
+}

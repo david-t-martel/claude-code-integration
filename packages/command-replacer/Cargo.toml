@@ -1,0 +1,50 @@
+[package]
+name = "command-replacer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Claude Code Hook System"]
+description = "High-performance command replacement PreToolUse hook for Claude Code"
+
+[[bin]]
+name = "command-replacer"
+path = "src/main.rs"
+
+[dependencies]
+# JSON processing with zero-allocation parsing
+simd-json = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Configuration management  
+toml = "0.8"
+
+# File watching for hot-reload
+notify = "6.1"
+
+# Tool availability detection
+which = "6.0"
+
+# Performance optimizations
+once_cell = "1.19"
+smallvec = { version = "1.13", features = ["serde"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# String processing and shell parsing
+regex = "1.10"
+shlex = "1.3"
+
+# Directory utilities
+dirs = "5.0"
+
+# Async runtime for file watching
+tokio = { version = "1.0", features = ["rt", "fs", "sync"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

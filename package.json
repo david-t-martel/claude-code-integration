@@ -1,0 +1,54 @@
+{
+  "name": "claude-code-integration",
+  "version": "2.0.0",
+  "description": "Unified Claude Code integration tools for Windows and WSL",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rimraf node_modules",
+    "install:hooks": "node scripts/install/install-hooks.js",
+    "dev": "turbo run dev --parallel",
+    "release": "changeset publish",
+    "consolidate": "node scripts/migrate/consolidate.js",
+    "setup": "node scripts/install/setup.js"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.0",
+    "rimraf": "^5.0.0",
+    "turbo": "^1.12.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/claude-code-integration.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "development-tools",
+    "windows",
+    "wsl",
+    "hooks",
+    "mcp"
+  ],
+  "author": "David Martel",
+  "license": "MIT"
+}

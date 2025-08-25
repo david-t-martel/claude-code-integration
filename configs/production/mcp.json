@@ -1,0 +1,828 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/specification/main/schema/mcp_config_schema.json",
+  "mcpServers": {
+    "rust-fs": {
+      "command": "rust-fs",
+      "args": [
+        "--mode",
+        "mcp",
+        "--protocol",
+        "stdio"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_FS_MAX_CONCURRENT": "16",
+        "RUST_FS_ENABLE_CACHE": "true",
+        "RUST_FS_CROSS_PLATFORM": "true",
+        "RUST_FS_WSL_PATH": "/home/david/.local/bin/rust-fs",
+        "RUST_FS_WINDOWS_PATH": "C:\\Users\\david\\.cargo\\bin",
+        "RUST_FS_MOUNT_POINTS": "C:=/mnt/c,T:=/mnt/t,F:=/mnt/f"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "High-performance filesystem operations with SIMD acceleration and cross-platform support",
+      "enabled": true
+    },
+    "rust-fetch": {
+      "command": "rust-fetch",
+      "args": [
+        "--mode",
+        "mcp",
+        "--protocol",
+        "stdio"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "HTTP_TIMEOUT": "30",
+        "RUST_FETCH_CACHE_SIZE": "1000",
+        "RUST_FETCH_SECURITY_LEVEL": "production",
+        "RUST_FETCH_CROSS_PLATFORM": "true",
+        "RUST_FETCH_WSL_PATH": "/home/david/.local/bin/rust-fetch",
+        "RUST_FETCH_WINDOWS_PATH": "C:\\Users\\david\\.cargo\\bin",
+        "RUST_FETCH_CERT_STORE": "system"
+      },
+      "timeout": 45000,
+      "restart": true,
+      "description": "Secure HTTP content retrieval with authentication, caching and cross-platform support",
+      "enabled": true
+    },
+    "rust-memory": {
+      "command": "rust-memory",
+      "args": [
+        "--mode",
+        "mcp",
+        "--protocol",
+        "stdio"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_MEMORY_BACKUP_ENABLED": "true",
+        "RUST_MEMORY_SEARCH_LIMIT": "1000"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Knowledge graph memory system with semantic search",
+      "enabled": true
+    },
+    "rust-bridge": {
+      "command": "rust-bridge",
+      "args": [
+        "mcp",
+        "--protocol",
+        "stdio"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_BRIDGE_CACHE_PATHS": "true",
+        "RUST_BRIDGE_SECURITY": "strict",
+        "RUST_BRIDGE_WSL_ROOT": "/home/david",
+        "RUST_BRIDGE_WINDOWS_ROOT": "C:\\Users\\david",
+        "RUST_BRIDGE_MOUNT_MAP": "C:=/mnt/c,T:=/mnt/t,F:=/mnt/f,WSL=\\\\wsl.localhost\\Ubuntu",
+        "RUST_BRIDGE_PATH_TRANSLATION": "true"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Optimized cross-platform WSL ↔ Windows communication bridge with path translation",
+      "enabled": true
+    },
+    "rust-link": {
+      "command": "rust-link",
+      "args": [
+        "--mode",
+        "mcp",
+        "--protocol",
+        "stdio"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_LINK_MAX_AGENTS": "50",
+        "RUST_LINK_DISCOVERY_TIMEOUT": "10",
+        "RUST_LINK_CROSS_PLATFORM": "true",
+        "RUST_LINK_WSL_PATH": "/home/david/.local/bin/rust-link",
+        "RUST_LINK_WINDOWS_PATH": "C:\\Users\\david\\.cargo\\bin"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Inter-agent communication framework for distributed workflows with cross-platform support",
+      "enabled": true
+    },
+    "ripgrep-search": {
+      "command": "rg",
+      "args": [
+        "--json",
+        "--with-filename",
+        "--line-number",
+        "--column",
+        "--no-heading",
+        "--color=never",
+        "--smart-case"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RIPGREP_CONFIG_PATH": "C:/Users/david/.ripgreprc",
+        "RIPGREP_MAX_COLUMNS": "4096",
+        "RIPGREP_MAX_FILESIZE": "50M",
+        "RIPGREP_CROSS_PLATFORM": "true",
+        "PATH": "C:/Users/david/.cargo/bin;${PATH}"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "High-performance regex search across codebases using ripgrep with intelligent cross-platform support",
+      "enabled": true
+    },
+    "rust-cross-platform": {
+      "command": "rust-cross-platform",
+      "args": [
+        "--mode",
+        "mcp",
+        "--protocol",
+        "stdio",
+        "--enable-path-translation",
+        "--enable-wsl-bridge"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_CP_WSL_ROOT": "/home/david",
+        "RUST_CP_WINDOWS_ROOT": "C:\\Users\\david",
+        "RUST_CP_MOUNT_POINTS": "C:=/mnt/c,T:=/mnt/t,F:=/mnt/f",
+        "RUST_CP_WSL_DISTRO": "Ubuntu",
+        "RUST_CP_CACHE_ENABLED": "true",
+        "RUST_CP_PERFORMANCE_MODE": "high",
+        "RUST_CP_MAX_CONCURRENT": "8"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Unified cross-platform operations coordinator for Windows-WSL integration",
+      "enabled": true
+    },
+    "rust-sequential-thinking": {
+      "command": "rust-sequential-thinking",
+      "args": [
+        "mcp"
+      ],
+      "env": {
+        "RUST_LOG": "info",
+        "RUST_SEQUENTIAL_THINKING_MAX_DEPTH": "20",
+        "RUST_SEQUENTIAL_THINKING_TIMEOUT": "300"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Structured reasoning framework for complex problem solving with sequential thinking",
+      "enabled": true
+    },
+    "redis-memory-gpu": {
+      "command": "redis-memory-gpu-server",
+      "args": [],
+      "env": {
+        "REDIS_URL": "redis://localhost:6379/0",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:512",
+        "TOKENIZERS_PARALLELISM": "true",
+        "REDIS_MEMORY_GPU_LOG_LEVEL": "info",
+        "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+        "GPU_ACCELERATION": "true",
+        "MAX_MEMORY_PER_AGENT": "1000",
+        "VECTOR_DIMENSION": "384",
+        "MCP_PROTOCOL_VERSION": "2024-11-05",
+        "AGENT_ID": "claude_redis_memory"
+      },
+      "timeout": 45000,
+      "restart": true,
+      "description": "GPU-accelerated Redis memory system for collaborative agentic shared memory",
+      "enabled": true
+    },
+    "vertex-code-reviewer": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-code-reviewer"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Code review and security analysis (STDIO mode for Claude compatibility)",
+      "enabled": true
+    },
+    "vertex-code-reviewer-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-code-reviewer",
+        "--transport",
+        "http",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8000",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-code-reviewer.localhost",
+        "VIRTUAL_PORT": "8000"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Code review via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "vertex-master-architect": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-master-architect"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "System design and architecture analysis (STDIO mode)",
+      "enabled": true
+    },
+    "vertex-master-architect-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-master-architect",
+        "--transport",
+        "http",
+        "--port",
+        "8002"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8002",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-master-architect.localhost",
+        "VIRTUAL_PORT": "8002"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "System architecture via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "vertex-code-generator": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-code-generator"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Code generation and optimization (STDIO mode)",
+      "enabled": true
+    },
+    "vertex-code-generator-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-code-generator",
+        "--transport",
+        "http",
+        "--port",
+        "8001"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8001",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-code-generator.localhost",
+        "VIRTUAL_PORT": "8001"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Code generation via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "vertex-workspace-analyzer": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-workspace-analyzer"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Project workspace analysis and optimization (STDIO mode)",
+      "enabled": true
+    },
+    "vertex-workspace-analyzer-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-workspace-analyzer",
+        "--transport",
+        "http",
+        "--port",
+        "8003"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8003",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-workspace-analyzer.localhost",
+        "VIRTUAL_PORT": "8003"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Workspace analysis via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "vertex-doc-generator": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-doc-generator"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Documentation generation with examples (STDIO mode)",
+      "enabled": true
+    },
+    "vertex-doc-generator-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-doc-generator",
+        "--transport",
+        "http",
+        "--port",
+        "8004"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8004",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-doc-generator.localhost",
+        "VIRTUAL_PORT": "8004"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Documentation generation via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "vertex-gcp-manager": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-gcp-manager"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "GCP resource management and cost optimization (STDIO mode)",
+      "enabled": true
+    },
+    "vertex-gcp-manager-http": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "vertex-mcp",
+        "vertex-gcp-manager",
+        "--transport",
+        "http",
+        "--port",
+        "8005"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "VERTEX_AI_EXPRESS_MODE": "true",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8005",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "vertex-gcp-manager.localhost",
+        "VIRTUAL_PORT": "8005"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "GCP management via HTTP (concurrent connections)",
+      "enabled": true
+    },
+    "context7": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {
+        "CURRENT_PROFILE": "personal",
+        "CONTEXT_PROFILE": "standard"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Upstash Context7 long-term context management for AI agents",
+      "enabled": true
+    },
+    "cloudflare-workers": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@cloudflare/mcp-server-cloudflare",
+        "run"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CLOUDFLARE_ACCOUNT_ID": "${CLOUDFLARE_ACCOUNT_ID}",
+        "CLOUDFLARE_API_TOKEN": "${CLOUDFLARE_API_TOKEN}"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Official Cloudflare Workers MCP server with proper environment configuration",
+      "enabled": false
+    },
+    "gemini-cli": {
+      "command": "python",
+      "args": [
+        "-m",
+        "gemini_cli.mcp_server"
+      ],
+      "cwd": "C:/Users/david/agents/gemini-cli",
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "GOOGLE_CLOUD_PROJECT": "auricleinc-gemini",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "GEMINI_CLI_USE_STREAMING": "true",
+        "GEMINI_CLI_MCP_MODE": "production",
+        "LOG_LEVEL": "INFO",
+        "RUST_LOG": "info",
+        "MCP_PROTOCOL_VERSION": "2024-11-05"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Gemini CLI with comprehensive Google AI/Cloud integration and streaming support",
+      "enabled": true
+    },
+    "gemini-cli-http": {
+      "command": "python",
+      "args": [
+        "-m",
+        "gemini_cli.mcp_server",
+        "--transport",
+        "http",
+        "--port",
+        "8010"
+      ],
+      "cwd": "C:/Users/david/agents/gemini-cli",
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "GOOGLE_CLOUD_PROJECT": "auricleinc-gemini",
+        "PY_GEMINI_SERVICE_ACCOUNT_ONLY": "true",
+        "GEMINI_CLI_USE_STREAMING": "true",
+        "GEMINI_CLI_MCP_MODE": "production",
+        "MCP_TRANSPORT": "http",
+        "MCP_HOST": "localhost",
+        "MCP_PORT": "8010",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "gemini-cli.localhost",
+        "VIRTUAL_PORT": "8010"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Gemini CLI HTTP server for concurrent connections",
+      "enabled": true
+    },
+    "mcp-code-generator": {
+      "command": "mcp-code-generator",
+      "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "MCP_PROTOCOL_VERSION": "2024-11-05",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "mcp-code-generator.localhost",
+        "VIRTUAL_PORT": "8020"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Advanced code generation with templates and project scaffolding",
+      "enabled": true
+    },
+    "unified-mcp-gateway": {
+      "command": "unified-mcp-gateway",
+      "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "VERTEX_PROJECT_ID": "auricleinc-gemini",
+        "VERTEX_LOCATION": "us-central1",
+        "VERTEX_MODEL": "gemini-2.0-flash-exp",
+        "MCP_PROTOCOL_VERSION": "2024-11-05",
+        "LOG_LEVEL": "INFO",
+        "VIRTUAL_HOST": "unified-mcp-gateway.localhost",
+        "VIRTUAL_PORT": "8030"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Unified orchestration gateway for multi-agent workflows",
+      "enabled": true
+    },
+    "gcp-wsl": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "gcp-mcp"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:/Users/david/.auth/business/service-account-key.json",
+        "GOOGLE_CLOUD_PROJECT": "auricleinc-gemini",
+        "GOOGLE_CLOUD_LOCATION": "us-central1"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Google Cloud Platform integration via MCP",
+      "enabled": false
+    },
+    "weather": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "T:/projects/mcp_servers/weather",
+        "python",
+        "-m",
+        "weather"
+      ],
+      "env": {
+        "PYTHONPATH": "T:/projects/mcp_servers/weather",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "National Weather Service alerts and weather data via FastMCP",
+      "enabled": true
+    },
+    "dropbox-mcp": {
+      "command": "node",
+      "args": [
+        "T:/projects/mcp_servers/dbx-mcp-server/build/index.js"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Dropbox integration with file operations, sharing, and resource management",
+      "enabled": false
+    },
+    "desktop-commander-udc": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@jasondsmith72/desktop-commander"
+      ],
+      "env": {
+        "CONFIG_PATH": "T:/projects/claude-desktop-config/configs/desktop-commander-config.json"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Enhanced desktop commander from UDC with configurable directories",
+      "enabled": false
+    },
+    "serena": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "T:/projects/serena",
+        "python",
+        "-m",
+        "serena.cli",
+        "start_mcp_server"
+      ],
+      "env": {
+        "PYTHONPATH": "T:/projects/serena/src",
+        "SERENA_LOG_LEVEL": "INFO",
+        "SERENA_PROJECT_ROOT": "T:/projects/serena",
+        "LOG_LEVEL": "INFO"
+      },
+      "timeout": 45000,
+      "restart": true,
+      "description": "Serena semantic code retrieval and editing toolkit - IDE-like capabilities for coding agents",
+      "enabled": true
+    },
+    "ironclads-cloudflare": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@ironclads/cloudflare-mcp"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CLOUDFLARE_ACCOUNT_ID": "${CLOUDFLARE_ACCOUNT_ID}",
+        "CLOUDFLARE_API_TOKEN": "${CLOUDFLARE_API_TOKEN}",
+        "CLOUDFLARE_ZONE_ID": "${CLOUDFLARE_ZONE_ID}"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Enterprise-grade Cloudflare MCP with DNS, SSL, Cache, Firewall support",
+      "enabled": true
+    },
+    "ganger-cloudflare": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@ganger-platform/mcp-cloudflare"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "CLOUDFLARE_ACCOUNT_ID": "${CLOUDFLARE_ACCOUNT_ID}",
+        "CLOUDFLARE_API_TOKEN": "${CLOUDFLARE_API_TOKEN}"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "Local Cloudflare MCP with optimized tool names",
+      "enabled": false
+    },
+    "wsl-filesys": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "mcp-server-wsl-filesystem",
+        "--distro=Ubuntu",
+        "/home/david",
+        "C:/Users/david",
+        "C:/codedev",
+        "T:/",
+        "F:/"
+      ],
+      "env": {
+        "WSL_DISTRO": "Ubuntu",
+        "WSL_USER": "david",
+        "WSL_HOME": "/home/david",
+        "WSL_MOUNT_POINTS": "C:=/mnt/c,T:=/mnt/t,F:=/mnt/f",
+        "NODE_ENV": "production"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "WSL filesystem operations with cross-platform path translation and performance optimization",
+      "enabled": true
+    },
+    "server-everything": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "timeout": 30000,
+      "restart": true,
+      "description": "All-in-one MCP server with multiple capabilities including filesystem, fetch, and utilities",
+      "enabled": true
+    }
+  },
+  "globalSettings": {
+    "logLevel": "info",
+    "maxConcurrentServers": 16,
+    "serverStartupTimeout": 10000,
+    "healthCheckInterval": 60000,
+    "enableMetrics": true,
+    "metricsPort": 9090
+  },
+  "security": {
+    "enableAuthentication": false,
+    "enableRateLimiting": true,
+    "defaultRateLimit": 100,
+    "trustedOrigins": [
+      "localhost",
+      "127.0.0.1"
+    ],
+    "enableAuditLogging": true,
+    "auditLogPath": "/home/david/.claude/logs/mcp-audit.log"
+  },
+  "name": "Comprehensive MCP Server Configuration - Windows/WSL Integration",
+  "version": "2.1.0",
+  "description": "Complete MCP ecosystem with Rust performance tools, Vertex AI agents, cross-platform operations, and discovered project servers",
+  "lastUpdated": "2025-01-23",
+  "features": [
+    "High-performance Rust binaries with SIMD acceleration", 
+    "Comprehensive Vertex AI agent ecosystem",
+    "Cross-platform Windows-WSL integration",
+    "Secure Google Cloud authentication",
+    "Multiple transport protocols (STDIO/HTTP)",
+    "Enterprise Cloudflare and Docker management",
+    "Weather data and project-specific integrations"
+  ]
+}

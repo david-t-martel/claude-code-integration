@@ -1,0 +1,96 @@
+{
+  "compilerOptions": {
+    // Latest ES version for maximum performance and features
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ES2022", // Use ESM for better tree shaking and performance  
+    "moduleResolution": "node", // Use node resolution for better compatibility
+    
+    // Strict type checking for maximum type safety
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    
+    // Advanced type checking
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "useUnknownInCatchVariables": true,
+    
+    // Module system optimizations
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    
+    // Build output optimizations
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "inlineSources": false,
+    "removeComments": true,
+    
+    // Performance optimizations
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    
+    // Advanced compiler optimizations
+    "useDefineForClassFields": true,
+    
+    // Emit optimizations for smaller bundles
+    "newLine": "lf",
+    "stripInternal": true,
+    "noEmitHelpers": false, // Keep helpers for compatibility
+    "importHelpers": true,
+    
+    // Path mapping for cleaner imports
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "@/types": ["./types"],
+      "@/utils": ["./utils/*"]
+    }
+  },
+  
+  // TypeScript 4.9+ project references for better performance
+  "compileOnSave": false,
+  "include": [
+    "src/**/*",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "coverage",
+    "*.js",
+    "*.mjs"
+  ],
+  
+  // Performance monitoring
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": ["**/node_modules", "**/dist"]
+  },
+  
+  // TypeScript 5.0+ performance improvements
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}

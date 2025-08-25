@@ -1,0 +1,20 @@
+{
+  "name": "@claude-code/hooks",
+  "version": "1.0.0",
+  "description": "Claude Code hooks system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:exe": "bun build src/pre-tool-use.ts --compile --outfile dist/pre-tool-use.exe",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
