@@ -1,0 +1,31 @@
+# Global code owners
+* @david-t-martel
+
+# GitHub workflows and CI/CD
+/.github/ @david-t-martel
+
+# Security-related files
+/security/ @david-t-martel
+/.github/workflows/security.yml @david-t-martel
+
+# Core packages
+/packages/core/ @david-t-martel
+/packages/hooks/ @david-t-martel
+
+# Platform-specific components
+/packages/windows-tools/ @david-t-martel
+
+# Configuration files
+/configs/ @david-t-martel
+*.json @david-t-martel
+*.yml @david-t-martel
+*.yaml @david-t-martel
+
+# Documentation
+/docs/ @david-t-martel
+*.md @david-t-martel
+
+# Build and release
+/scripts/ @david-t-martel
+package.json @david-t-martel
+pnpm-lock.yaml @david-t-martel
